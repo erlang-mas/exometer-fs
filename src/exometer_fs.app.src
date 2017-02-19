@@ -1,0 +1,15 @@
+{application, exometer_fs,
+ [{description, "Exometer filesystem reporter"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications,
+   [kernel,
+    stdlib,
+    exometer_core
+   ]},
+  {env,[]},
+  {modules, []},
+  {maintainers, ["Bartosz Zurkowski"]},
+  {licenses, ["MIT"]},
+  {links, []}
+ ]}.
