@@ -22,6 +22,8 @@
     exometer_terminate/2
    ]).
 
+-define(UNIX_EPOCH, 62167219200).
+
 -record(state, {base_dir :: string(),
                 files    :: dict:dict()}).
 
@@ -122,6 +124,18 @@ metric_to_path([Component | T]) ->
 %%------------------------------------------------------------------------------
 %% @private
 %%------------------------------------------------------------------------------
+stringify(T) when is_atom(T) ->
+    atom_to_list(T);
+stringify(T) when is_list(T) ->
+    T;
+stringify(T) when is_integer(T) ->
+    integer_to_list(T);
+stringify(T) ->
+    io_lib:format("~w", [T]).
+
+%%------------------------------------------------------------------------------
+%% @private
+%%------------------------------------------------------------------------------
 open_file(Path) ->
     ok = filelib:ensure_dir(Path),
     {ok, File} = file:open(Path, [append, delayed_write, raw]),
@@ -137,25 +151,33 @@ close_file(File) ->
 %% @private
 %%------------------------------------------------------------------------------
 write_entry(Value, File) ->
-    file:write(File, io_lib:fwrite("~s~n", [value(Value)])).
+    Data = string:join([timestamp(), value(Value)], ","),
+    file:write(File, io_lib:fwrite("~s~n", [Data])).
+
 
 %%------------------------------------------------------------------------------
 %% @private
 %%------------------------------------------------------------------------------
-stringify(T) when is_atom(T) ->
-    atom_to_list(T);
-stringify(T) when is_list(T) ->
-    T;
-stringify(T) when is_integer(T) ->
-    integer_to_list(T);
-stringify(T) ->
-    io_lib:format("~w", [T]).
+timestamp() ->
+    integer_to_list(unix_time()).
+
+%%------------------------------------------------------------------------------
+%% @private
+%%------------------------------------------------------------------------------
+unix_time() ->
+    datetime_to_unix_time(erlang:universaltime()).
+
+%%------------------------------------------------------------------------------
+%% @private
+%%------------------------------------------------------------------------------
+datetime_to_unix_time({{_,_,_},{_,_,_}} = DateTime) ->
+    calendar:datetime_to_gregorian_seconds(DateTime) - ?UNIX_EPOCH.
 
 %%------------------------------------------------------------------------------
 %% @private
 %%------------------------------------------------------------------------------
 value(V) when is_integer(V) -> integer_to_list(V);
-value(V) when is_float(V)   -> io_lib:format("~f", [V]);
+value(V) when is_float(V)   -> float_to_list(V);
 value(_) -> "0".
 
 %%------------------------------------------------------------------------------
